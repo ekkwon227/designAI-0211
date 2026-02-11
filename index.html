@@ -61,10 +61,17 @@
         const SUPABASE_URL = 'https://twpvmxsrljejauowthxq.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_wUcYIRySgzOfiR6z_HmkQg_GazUbYqS';
 
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // supabase 변수 중복 선언 문제 해결
+        let supabase;
+        if (!window.supabase) {
+            supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            window.supabase = supabase; // 전역 객체에 저장
+        } else {
+            supabase = window.supabase;
+        }
 
-        // 함수를 window 객체에 직접 할당
-        window.saveMessage = async function() {
+        // saveMessage 함수를 전역 스코프로 이동
+        async function saveMessage() {
             const name = document.getElementById('name').value;
             const message = document.getElementById('message').value;
 
@@ -73,7 +80,6 @@
                 .insert([
                     { name: name, message: message },
                 ]);
-
             if (error) {
                 console.error('Error saving message:', error);
                 alert('메시지 저장에 실패했습니다.');
@@ -82,14 +88,14 @@
                 alert('메시지가 성공적으로 저장되었습니다!');
                 loadMessages(); // 메시지 저장 후 목록 갱신
             }
-        };
+        }
+        window.saveMessage = saveMessage; // 전역 스코프에 명시적으로 할당
 
         async function loadMessages() {
             const { data, error } = await supabase
                 .from('guestbook')
                 .select('*')
                 .order('created_at', { ascending: false });
-
             const messagesDiv = document.getElementById('messages');
             messagesDiv.innerHTML = '<h2 class="text-xl font-bold text-gray-700 mb-4">최근 글</h2>'; // 제목 유지
 
