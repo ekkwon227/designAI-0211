@@ -49,12 +49,7 @@
                 </button>
             </div>
         </div>
-        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" id="image-upload-area">
-            <h2 class="text-xl font-bold text-gray-700 mb-4">이미지 업로드</h2>
-            <img id="image-preview" src="#" alt="Image Preview" style="display: none;" class="max-w-full max-h-40 mb-4">
-            <input type="file" id="image-input" accept="image/*" class="mb-4">
-            <button id="upload-button" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Upload Image</button>
-        </div>
+
         <!-- Message Length Filter -->
         <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
             <div class="mb-4">
@@ -76,8 +71,6 @@
             <h2 class="text-xl font-bold text-gray-700 mb-4">최근 글</h2>
             <!-- 메시지 목록이 여기에 추가됩니다 -->
         </div>
-
-
     </div>
 
 <script>
@@ -100,34 +93,9 @@
         return `${Math.floor(diff / 86400)}일 전`;
     }
 
-    function displayMessages(messages) {
-        const messagesDiv = document.getElementById('messages');
-        messagesDiv.innerHTML = '';
-        messages.forEach(message => {
-            const messageElement = document.createElement('div');
-            messageElement.className = 'mb-4 p-3 border-b border-gray-100 fade-in';
-
-            // 이미지 URL이 있는 경우 이미지 추가
-            if (message.image_url) {
-                messageElement.innerHTML = `
-                    <p class="text-gray-800"><strong>${message.name}:</strong> ${message.message}</p>
-                    <img src="${message.image_url}" alt="Uploaded Image" style="max-width: 100px; max-height: 100px;">
-                    <p class="text-gray-500 text-xs">${timeAgo(message.created_at)}</p>
-                `;
-            } else {
-                messageElement.innerHTML = `
-                    <p class="text-gray-800"><strong>${message.name}:</strong> ${message.message}</p>
-                    <p class="text-gray-500 text-xs">${timeAgo(message.created_at)}</p>
-                `;
-            }
-
-            messagesDiv.appendChild(messageElement);
-        });
-    }
-
     // 4. 메시지 불러오기
     async function loadMessages() {
-                const { data, error } = await _supabase
+        const { data, error } = await _supabase
             .from('guestbook')
             .select('*')
             .order('created_at', { ascending: false });
@@ -138,23 +106,19 @@
         const minLengthInput = document.getElementById('minLength');
         const minLength = parseInt(minLengthInput.value) || 0;
 
-        let filteredMessages = data.filter(msg => msg.message.length >= minLength);
-        displayMessages(filteredMessages);
+        messagesDiv.innerHTML = '<h2 class="text-xl font-bold text-gray-700 mb-4">최근 글</h2>';
+        data.forEach(msg => {
+            if (msg.message.length >= minLength) { // Check if message length meets the minimum requirement
+            const div = document.createElement('div');
+            div.className = 'mb-4 p-3 border-b border-gray-100 fade-in';
+            div.innerHTML = `
+                <p class="text-gray-800"><strong>${msg.name}:</strong> ${msg.message}</p>
+                <p class="text-gray-500 text-xs">${timeAgo(msg.created_at)}</p>
+            `;
+            messagesDiv.appendChild(div);
     }
-
-    // Function to save message to the database
-    async function saveMessage(content, image_url) {
-                const { data, error } = await _supabase
-            .from('guestbook') // changed 'messages' to 'guestbook' to match the original code
-            .insert([
-                { message: content, image_url: image_url } // Changed 'content' to 'message' to match the database schema, name field is handled in original event listener
-            ]);
-                if (error) {
-            console.error('Error saving message:', error.message);
-                } else {
-            console.log('Message saved successfully:', data);
-                }
-            }
+        });
+    }
 
     // 5. 실행 및 이벤트 연결 (가장 중요!)
     document.addEventListener('DOMContentLoaded', () => {
@@ -162,7 +126,7 @@
         loadMessages();
 
         // [핵심] HTML의 onclick 대신 여기서 직접 버튼을 찾아 연결합니다.
-        const submitBtn = document.querySelector('button[type="button"');
+        const submitBtn = document.querySelector('button[type="button"]');
         if (submitBtn) {
             submitBtn.addEventListener('click', async () => {
                 const nameInput = document.getElementById('name');
@@ -172,76 +136,23 @@
 
                 if (!name || !message) return alert('내용을 입력해주세요!');
 
-                // Include the uploaded image URL when saving
                 const { error } = await _supabase
                     .from('guestbook')
-                    .insert([{ name, message, image_url: uploadedImageURL }]);
+                    .insert([{ name, message }]);
 
                 if (error) {
                     alert('저장 실패: ' + error.message);
                 } else {
                     nameInput.value = '';
                     messageInput.value = '';
-                    uploadedImageURL = null; // Reset the image URL after sending
-                    imagePreview.src = '#';  // Reset the image preview
-                    imagePreview.style.display = 'none';
-                    imageInput.value = '';    // Clear the image input
                     loadMessages(); // 리스트만 새로고침
                 }
-        });
+            });
         }
 
         const minLengthInput = document.getElementById('minLength');
         const filterBtn = document.getElementById('filterBtn');
         filterBtn.addEventListener('click', loadMessages);
-
-        const imageInput = document.getElementById('image-input');
-        const uploadButton = document.getElementById('upload-button');
-        const imagePreview = document.getElementById('image-preview');
-
-        let uploadedImageURL = null;
-
-        imageInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    imagePreview.src = e.target.result;
-                    imagePreview.style.display = 'block';
-                }
-                reader.readAsDataURL(file);
-            }
-    });
-
-        uploadButton.addEventListener('click', async () => {
-            const file = imageInput.files[0];
-            if (!file) {
-                alert('Please select an image to upload.');
-                return;
-            }
-
-            try {
-                const { data, error } = await _supabase
-                    .storage
-                    .from('images') // Ensure this matches your storage bucket name
-                    .upload(`${Date.now()}_${file.name}`, file, {
-                        cacheControl: '3600',
-                        upsert: false
-                    });
-
-                if (error) {
-                    console.error('Error uploading image:', error.message);
-                    alert('Failed to upload image.');
-                } else {
-                    console.log('Image uploaded successfully:', data);
-                    uploadedImageURL = `https://twpvmxsrljejauowthxq.supabase.co/storage/v1/object/public/images/${data.path}`; // Construct the public URL, using your supabase URL
-                    alert('Image uploaded successfully!');
-                }
-            } catch (error) {
-                console.error('Unexpected error uploading image:', error.message);
-                alert('Unexpected error uploading image.');
-            }
-        });
     });
 </script>
 </body>

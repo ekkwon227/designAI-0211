@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이미지 업로드 테스트</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-8">
+        <h1 class="text-2xl font-bold mb-4">이미지 업로드 테스트</h1>
+
+        <!-- 이미지 업로드 섹션 -->
+        <div class="mb-6">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="imageUpload">
+                이미지 선택:
+            </label>
+            <input type="file" id="imageUpload" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-2" type="button" id="uploadBtn">
+                이미지 업로드
+            </button>
+        </div>
+
+        <!-- 이미지 표시 섹션 -->
+        <div>
+            <h2 class="text-xl font-bold mb-2">업로드된 이미지</h2>
+            <div id="imageDisplay" class="flex flex-wrap -mx-2">
+                <!-- 이미지 목록이 여기에 추가됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase 설정
+        const SUPABASE_URL = 'https://twpvmxsrljejauowthxq.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_wUcYIRySgzOfiR6z_HmkQg_GazUbYqS';
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // 이미지 업로드 함수
+        async function uploadImage() {
+            const fileInput = document.getElementById('imageUpload');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('이미지를 선택해주세요.');
+                return;
+            }
+
+            const { data, error } = await _supabase
+                .storage
+                .from('images') // 'images' 버킷을 사용합니다.
+                .upload(file.name, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+
+            if (error) {
+                alert('이미지 업로드 실패: ' + error.message);
+            } else {
+                alert('이미지 업로드 성공!');
+                loadImages(); // 이미지 목록 갱신
+            }
+        }
+
+        // 이미지 로드 함수
+        async function loadImages() {
+            const { data, error } = await _supabase
+                .storage
+                .from('images') // 'images' 버킷을 사용합니다.
+                .list();
+
+            if (error) {
+                alert('이미지 목록을 불러오는데 실패했습니다: ' + error.message);
+                return;
+            }
+
+            const imageDisplay = document.getElementById('imageDisplay');
+            imageDisplay.innerHTML = ''; // 기존 이미지 목록 비우기
+
+            data.forEach(image => {
+                const { data: publicUrlData } = _supabase.storage.from('images').getPublicUrl(image.name);
+                const imageUrl = publicUrlData.publicUrl; 
+                const imgElement = document.createElement('img');
+                imgElement.src = imageUrl;
+                imgElement.alt = image.name;
+                imgElement.className = 'w-32 h-32 object-cover m-2 rounded';
+                imageDisplay.appendChild(imgElement);
+            });
+        }
+
+        // 이벤트 리스너
+        document.addEventListener('DOMContentLoaded', () => {
+            const uploadBtn = document.getElementById('uploadBtn');
+            uploadBtn.addEventListener('click', uploadImage);
+
+            loadImages(); // 페이지 로드시 이미지 목록 불러오기
+        });
+    </script>
+</body>
+</html>
