@@ -44,7 +44,7 @@
                 <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="message" placeholder="메시지를 입력하세요"></textarea>
             </div>
             <div class="flex items-center justify-between">
-                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button" onclick="window.saveMessage()">
+                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button" onclick="saveMessage()">
                     글 남기기
                 </button>
             </div>
@@ -63,7 +63,8 @@
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function saveMessage() {
+        // 함수를 window 객체에 직접 할당
+        window.saveMessage = async function() {
             const name = document.getElementById('name').value;
             const message = document.getElementById('message').value;
 
@@ -81,7 +82,7 @@
                 alert('메시지가 성공적으로 저장되었습니다!');
                 loadMessages(); // 메시지 저장 후 목록 갱신
             }
-        }
+        };
 
         async function loadMessages() {
             const { data, error } = await supabase
