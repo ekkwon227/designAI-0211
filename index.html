@@ -57,74 +57,73 @@
         </div>
     </div>
 
-    <script>
+<script>
+        // 1. 변수 선언 방식을 'const' 하나로 통일하여 중복 에러 차단
         const SUPABASE_URL = 'https://twpvmxsrljejauowthxq.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_wUcYIRySgzOfiR6z_HmkQg_GazUbYqS';
 
-        // supabase 변수 중복 선언 문제 해결 및 스코프 조정
-        let supabase;
-        if (typeof window.supabase === 'undefined') {
-            supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            window.supabase = supabase; // 전역 스코프에 저장
-        } else {
-            supabase = window.supabase;
-        }
+        // 2. 라이브러리에서 createClient 추출
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // saveMessage 함수를 전역 스코프로 이동
+        // 3. 메시지 저장 함수 (함수 선언문 방식으로 작성하여 어디서든 접근 가능하게 함)
         async function saveMessage() {
-            const name = document.getElementById('name').value;
-            const message = document.getElementById('message').value;
+            const nameInput = document.getElementById('name');
+            const messageInput = document.getElementById('message');
+            
+            const name = nameInput.value;
+            const message = messageInput.value;
 
-            const { error } = await supabase
+            if (!name || !message) {
+                alert('이름과 메시지를 모두 입력해주세요!');
+                return;
+            }
+
+            const { error } = await _supabase
                 .from('guestbook')
-                .insert([
-                    { name: name, message: message },
-                ]);
+                .insert([{ name, message }]);
 
             if (error) {
-                console.error('Error saving message:', error);
-                alert('메시지 저장에 실패했습니다.');
+                console.error('Error saving:', error);
+                alert('저장 실패: ' + error.message);
             } else {
-                console.log('Message saved successfully!');
-                alert('메시지가 성공적으로 저장되었습니다!');
-                loadMessages(); // 메시지 저장 후 목록 갱신
+                alert('성공적으로 저장되었습니다!');
+                nameInput.value = '';
+                messageInput.value = '';
+                loadMessages(); 
             }
         }
 
-        // loadMessages 함수 정의 (이전 코드와 동일)
+        // 4. 메시지 불러오기 함수
         async function loadMessages() {
-            const { data, error } = await supabase
+            const { data, error } = await _supabase
                 .from('guestbook')
                 .select('*')
                 .order('created_at', { ascending: false });
 
             const messagesDiv = document.getElementById('messages');
-            messagesDiv.innerHTML = '<h2 class="text-xl font-bold text-gray-700 mb-4">최근 글</h2>'; // 제목 유지
-
+            
             if (error) {
-                console.error('Error loading messages:', error);
-                messagesDiv.innerHTML += '<p>메시지를 불러오는 데 실패했습니다.</p>';
-            } else {
-                data.forEach(message => {
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = 'mb-4';
-                    messageDiv.innerHTML = `
-                        <p class="text-gray-800"><strong>${message.name}:</strong> ${message.message}</p>
-                        <p class="text-gray-600 text-sm">${new Date(message.created_at).toLocaleDateString()}</p>
-                    `;
-                    messagesDiv.appendChild(messageDiv);
-                });
+                console.error('Error loading:', error);
+                return;
             }
+
+            // 목록 초기화 후 렌더링
+            messagesDiv.innerHTML = '<h2 class="text-xl font-bold text-gray-700 mb-4">최근 글</h2>';
+            data.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = 'mb-4 p-2 border-b border-gray-100';
+                div.innerHTML = `
+                    <p class="text-gray-800"><strong>${msg.name}:</strong> ${msg.message}</p>
+                    <p class="text-gray-500 text-xs">${new Date(msg.created_at).toLocaleString()}</p>
+                `;
+                messagesDiv.appendChild(div);
+            });
         }
 
-        // DOMContentLoaded 이벤트 리스너를 사용하여 스크립트 실행 시점 제어
-        document.addEventListener('DOMContentLoaded', function() {
-            // saveMessage 함수를 window 객체에 할당
-            window.saveMessage = saveMessage;
-
-        // 페이지 로드 시 메시지 불러오기
-            loadMessages();
-        });
+        // 5. 전역 등록 및 초기 실행
+        window.saveMessage = saveMessage;
+        document.addEventListener('DOMContentLoaded', loadMessages);
     </script>
 </body>
 </html>
