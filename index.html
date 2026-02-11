@@ -44,9 +44,25 @@
                 <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="message" placeholder="메시지를 입력하세요"></textarea>
             </div>
             <div class="flex items-center justify-between">
-                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button" id="saveBtn"">
+                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="button" id="saveBtn">
                     글 남기기
                 </button>
+            </div>
+        </div>
+
+        <!-- Message Length Filter -->
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="minLength">
+                    최소 메시지 길이:
+                </label>
+                <div class="flex">
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                           id="minLength" type="number" placeholder="최소 길이 입력 (기본: 0)" value="0">
+                    <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ml-2" type="button" id="filterBtn">
+                        필터
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -87,8 +103,12 @@
         const messagesDiv = document.getElementById('messages');
         if (error || !messagesDiv) return;
 
+        const minLengthInput = document.getElementById('minLength');
+        const minLength = parseInt(minLengthInput.value) || 0;
+
         messagesDiv.innerHTML = '<h2 class="text-xl font-bold text-gray-700 mb-4">최근 글</h2>';
         data.forEach(msg => {
+            if (msg.message.length >= minLength) { // Check if message length meets the minimum requirement
             const div = document.createElement('div');
             div.className = 'mb-4 p-3 border-b border-gray-100 fade-in';
             div.innerHTML = `
@@ -96,6 +116,7 @@
                 <p class="text-gray-500 text-xs">${timeAgo(msg.created_at)}</p>
             `;
             messagesDiv.appendChild(div);
+    }
         });
     }
 
@@ -128,14 +149,10 @@
                 }
             });
         }
-    });
-// 페이지가 준비되면 버튼을 직접 찾아가서 '클릭 이벤트'를 붙여줍니다.
-    document.addEventListener('DOMContentLoaded', () => {
-        const btn = document.getElementById('saveBtn'); // 위에서 만든 id
-        if (btn) {
-            btn.addEventListener('click', saveMessage);
-        }
-        loadMessages(); // 페이지 열자마자 목록 가져오기
+
+        const minLengthInput = document.getElementById('minLength');
+        const filterBtn = document.getElementById('filterBtn');
+        filterBtn.addEventListener('click', loadMessages);
     });
 </script>
 </body>
