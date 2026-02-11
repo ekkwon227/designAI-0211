@@ -56,13 +56,15 @@
             <!-- 메시지 목록이 여기에 추가됩니다 -->
         </div>
     </div>
+
     <script>
         const SUPABASE_URL = 'https://twpvmxsrljejauowthxq.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_wUcYIRySgzOfiR6z_HmkQg_GazUbYqS';
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function saveMessage() {
+        // saveMessage 함수가 정의되지 않은 문제를 해결하기 위해 함수를 전역 스코프로 이동
+        window.saveMessage = async function() {
             const name = document.getElementById('name').value;
             const message = document.getElementById('message').value;
 
