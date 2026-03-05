@@ -107,7 +107,11 @@
                     // 이미지 썸네일
                     let imageElement = '';
                     if (message.image_url) {
-                        imageElement = `<img src="${message.image_url}" alt="Uploaded Image" class="max-w-20 max-h-20 mr-4 rounded">`; // Tailwind CSS 클래스 추가
+                //        imageElement = `<img src="${message.image_url}" alt="Uploaded Image" class="max-w-20 max-h-20 mr-4 rounded">`; // Tailwind CSS 클래스 추가
+                //    }
+                    const baseUrl = "https://twpvmxsrljejauowthxq.supabase.co/storage/v1/object/public/images/guestbook/";
+                    const fullImageUrl = message.image_url.startsWith('http') ? message.image_url : `${baseUrl}${message.image_url}`;
+                    imageElement = `<img src="${fullImageUrl}" alt="Uploaded Image" class="max-w-20 max-h-20 mr-4 rounded">`;
                     }
 
                     // 좋아요 버튼
